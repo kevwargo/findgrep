@@ -2,6 +2,7 @@ import builtins
 from argparse import ArgumentParser
 from copy import deepcopy
 from pathlib import Path
+from subprocess import run as run_cmd
 
 import yaml
 
@@ -12,9 +13,10 @@ DEFAULT_CONFIG = {
         # Path options
         "exclude-cdk": {"alias": "c", "target": ["!", "-path", "*/cdk.out/*"], "value": True},
         "exclude-node-modules": {"alias": "N", "target": ["!", "-path", "*/node_modules/*"], "value": True},
-        "exclude-cover": {"alias": "V", "target": ["!", "-path", "*/cover/*"], "value": True},
         "exclude-git": {"alias": "G", "target": ["!", "-path", "*/.git/*"], "value": True},
         "exclude-venv": {"alias": "v", "target": ["!", "-path", "*/.venv/*"], "value": True},
+        "exclude-cover": {"alias": "V", "target": ["!", "-path", "*/cover/*"], "value": True},
+        "exclude-serverless": {"alias": "S", "target": ["!", "-path", "*/.serverless/*"], "value": True},
         # Exclude name options
         "exclude-autosave": {"alias": "~", "target": ["!", "-name", "*~"], "value": True},
         "exclude-temp-sockets": {"alias": ".#", "target": ["!", "-name", ".#*"], "value": True},
@@ -57,27 +59,81 @@ DEFAULT_CONFIG = {
 def run():
     config = load_config()
     parser = ArgumentParser()
+    ns = Namespace()
 
     for options in config.values():
-        for name, opt in options.items():
-            if opt.get("disabled"):
-                continue
+        for disabled in [n for n in options if options[n].get("disabled")]:
+            del options[disabled]
 
+        for name, opt in options.items():
             if type_ := opt.get("type"):
                 kwargs = {"type": getattr(builtins, type_)}
             else:
                 kwargs = {"action": "store_true"}
+                if opt.get("value"):
+                    name = f"no-{name}"
 
-            parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
+            arg = parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
+            ns.register_option(arg.dest, opt)
 
-    print(parser.parse_args())
+    ns, regexps = parser.parse_known_args(namespace=ns)
+
+    cmd = ["find", "."]
+    for find_path in (o for o in config["find"].values() if "-path" in o["target"]):
+        cmd.extend(build_opt_value_list(find_path))
+
+    cmd.extend(["-type", "f"])
+    for find_name in (o for o in config["find"].values() if "-name" in o["target"]):
+        cmd.extend(build_opt_value_list(find_name))
+
+    cmd.extend(["-exec", "grep", "--color=always"])
+    grep_shorts = "-"
+    for grep_opt in config["grep"].values():
+        value = build_opt_value_list(grep_opt)
+        if len(value) == 1:
+            grep_shorts += value[0][1]
+        else:
+            cmd.extend(value)
+    if len(grep_shorts) > 1:
+        cmd.append(grep_shorts)
+
+    for regexp in regexps:
+        cmd.extend(["-e", regexp])
+
+    cmd.extend(["{}", "+"])
+
+    run_cmd(cmd)
+
+
+class Namespace:
+    def __init__(self):
+        super().__setattr__("options", {})
+
+    def register_option(self, name: str, opt: dict):
+        self.options[name] = opt
+
+    def __setattr__(self, name: str, value: bool | str | None):
+        self.options[name]["resolved"] = value
+
+
+def build_opt_value_list(opt: dict) -> list[str]:
+    resolved = opt["resolved"]
+    target = opt["target"]
+
+    if bool(opt.get("value")) != (resolved is None or resolved is False):
+        return []
+
+    target = target if isinstance(target, list) else [target]
+    if not isinstance(resolved, bool):
+        target.append(str(resolved))
+
+    return target
 
 
 def load_config() -> dict:
     config_files = find_config_files(Path.cwd())
     config = deepcopy(DEFAULT_CONFIG)
     for config_file in config_files:
-        print(f"Parsing {config_file}...")
         local_config = yaml.load(config_file.read_text(), Loader=yaml.SafeLoader)
         if isinstance(local_config, dict):
             merge_in(config, local_config)
