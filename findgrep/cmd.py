@@ -12,7 +12,7 @@ def run():
     args = parse_cmdline(config)
 
     if args.print_elisp_transient:
-        return print_elisp_transient(args)
+        return print_elisp_transient(config)
 
     cmd = build_command(config, args.regexps)
 

@@ -1,5 +1,6 @@
 import builtins
 from argparse import ArgumentParser, HelpFormatter
+from collections import defaultdict
 from functools import partial
 
 
@@ -20,8 +21,7 @@ class Arguments:
 def parse_cmdline(config: dict) -> Arguments:
     parser = ArgumentParser(formatter_class=partial(HelpFormatter, max_help_position=40))
     args = Arguments()
-
-    only_group = parser.add_mutually_exclusive_group()
+    mutex_groups = defaultdict(parser.add_mutually_exclusive_group)
 
     for section, options in config.items():
         for disabled in [n for n in options if options[n].get("disabled")]:
@@ -35,15 +35,18 @@ def parse_cmdline(config: dict) -> Arguments:
                 if opt.get("value"):
                     name = f"no-{name}"
 
+            opt["name"] = name
+
             if section == "find":
                 kwargs["help"] = f"Adds '{' '.join(opt['target'])}' to find"
             elif section == "grep":
                 kwargs["help"] = f"Adds '{opt['target']}' to grep"
 
-            if name.startswith("only-"):
-                arg = only_group.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
-            else:
-                arg = parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
+            arg_container = parser
+            if g := opt.get("mutex-group"):
+                arg_container = mutex_groups[g]
+
+            arg = arg_container.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
 
             args.register_option(arg.dest, opt)
 
