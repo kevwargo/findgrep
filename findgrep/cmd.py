@@ -1,6 +1,8 @@
 import builtins
+import sys
 from argparse import ArgumentParser
 from copy import deepcopy
+from itertools import chain
 from pathlib import Path
 from subprocess import run as run_cmd
 
@@ -58,6 +60,46 @@ DEFAULT_CONFIG = {
 
 def run():
     config = load_config()
+    args = parse_cmdline(config)
+    cmd = build_command(config, args.regexps)
+
+    if args.print_cmd:
+        print(" ".join(cmd))
+    elif args.regexps:
+        run_cmd(cmd)
+    else:
+        print("No regexp", file=sys.stderr)
+        exit(1)
+
+
+def build_command(config: dict, regexps: list[str]) -> list[str]:
+    return [
+        *("find", "."),
+        *chain.from_iterable(build_opt_value_list(o) for o in config["find"].values() if "-path" in o["target"]),
+        *("-type", "f"),
+        *chain.from_iterable(build_opt_value_list(o) for o in config["find"].values() if "-name" in o["target"]),
+        *("-exec", "grep", "--color=always"),
+        *chain.from_iterable(build_opt_value_list(o) for o in config["grep"].values()),
+        *chain.from_iterable(["-e", r] for r in regexps),
+        *("{}", "+"),
+    ]
+
+
+class Namespace:
+    def __init__(self):
+        self._options = {}
+
+    def register_option(self, name: str, opt: dict):
+        self._options[name] = opt
+
+    def __setattr__(self, name: str, value: bool | str | None):
+        try:
+            self._options[name]["resolved"] = value
+        except (AttributeError, KeyError):
+            super().__setattr__(name, value)
+
+
+def parse_cmdline(config: dict) -> Namespace:
     parser = ArgumentParser()
     ns = Namespace()
 
@@ -76,44 +118,10 @@ def run():
             arg = parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
             ns.register_option(arg.dest, opt)
 
-    ns, regexps = parser.parse_known_args(namespace=ns)
+    parser.add_argument("--print-cmd", action="store_true")
+    parser.add_argument("regexps", nargs="*")
 
-    cmd = ["find", "."]
-    for find_path in (o for o in config["find"].values() if "-path" in o["target"]):
-        cmd.extend(build_opt_value_list(find_path))
-
-    cmd.extend(["-type", "f"])
-    for find_name in (o for o in config["find"].values() if "-name" in o["target"]):
-        cmd.extend(build_opt_value_list(find_name))
-
-    cmd.extend(["-exec", "grep", "--color=always"])
-    grep_shorts = "-"
-    for grep_opt in config["grep"].values():
-        value = build_opt_value_list(grep_opt)
-        if len(value) == 1:
-            grep_shorts += value[0][1]
-        else:
-            cmd.extend(value)
-    if len(grep_shorts) > 1:
-        cmd.append(grep_shorts)
-
-    for regexp in regexps:
-        cmd.extend(["-e", regexp])
-
-    cmd.extend(["{}", "+"])
-
-    run_cmd(cmd)
-
-
-class Namespace:
-    def __init__(self):
-        super().__setattr__("options", {})
-
-    def register_option(self, name: str, opt: dict):
-        self.options[name] = opt
-
-    def __setattr__(self, name: str, value: bool | str | None):
-        self.options[name]["resolved"] = value
+    return parser.parse_args(namespace=ns)
 
 
 def build_opt_value_list(opt: dict) -> list[str]:
