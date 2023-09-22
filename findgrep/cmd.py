@@ -1,6 +1,6 @@
 import sys
-from itertools import chain
 from subprocess import run as run_cmd
+from typing import Iterable, Iterator
 
 from findgrep.arguments import parse_cmdline
 from findgrep.config import load_config
@@ -28,25 +28,32 @@ def run():
 def build_command(config: dict, regexps: list[str]) -> list[str]:
     return [
         *("find", "."),
-        *chain.from_iterable(build_opt_value_list(o) for o in config["find"].values() if "-path" in o["target"]),
+        *opt_args(o for o in config["find"].values() if "-path" in o["target"]),
         *("-type", "f"),
-        *chain.from_iterable(build_opt_value_list(o) for o in config["find"].values() if "-name" in o["target"]),
+        *opt_args(o for o in config["find"].values() if "-name" in o["target"]),
         *("-exec", "grep", "--color=always"),
-        *chain.from_iterable(build_opt_value_list(o) for o in config["grep"].values()),
-        *chain.from_iterable(["-e", r] for r in regexps),
+        *opt_args(o for o in config["grep"].values()),
+        *regexp_args(regexps),
         *("{}", "+"),
     ]
 
 
-def build_opt_value_list(opt: dict) -> list[str]:
-    resolved = opt["resolved"]
-    target = opt["target"]
+def opt_args(options: Iterable[dict]) -> Iterator[str]:
+    for opt in options:
+        resolved = opt["resolved"]
+        target = opt["target"]
 
-    if bool(opt.get("value")) != (resolved is None or resolved is False):
-        return []
+        if bool(opt.get("value")) != (resolved is None or resolved is False):
+            continue
 
-    target = target if isinstance(target, list) else [target]
-    if not isinstance(resolved, bool):
-        target.append(str(resolved))
+        target = target if isinstance(target, list) else [target]
+        if not isinstance(resolved, bool):
+            target.append(str(resolved))
 
-    return target
+        yield from target
+
+
+def regexp_args(regexps: list[str]) -> Iterator[str]:
+    for r in regexps:
+        yield "-e"
+        yield r
