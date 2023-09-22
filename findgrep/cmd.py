@@ -35,13 +35,13 @@ DEFAULT_CONFIG = {
             "target": ["!", "-name", "test_*.py", "!", "-name", "*_test.go"],
             "value": True,
         },
-        # Include name options
-        "include-go": {"alias": "g", "target": ["-name", "*.go"]},
-        "include-python": {"alias": "p", "target": ["-name", "*.py"]},
-        "include-typescript": {"alias": "t", "target": ["-name", "*.ts"]},
-        "include-java": {"alias": "J", "target": ["-name", "*.java"]},
-        "include-graphql": {"alias": "q", "target": ["-name", "*.graphql"]},
-        "include-el": {"alias": "E", "target": ["-name", "*.el"]},
+        # File selection options
+        "only-go": {"alias": "g", "target": ["-name", "*.go"]},
+        "only-python": {"alias": "p", "target": ["-name", "*.py"]},
+        "only-typescript": {"alias": "t", "target": ["-name", "*.ts"]},
+        "only-java": {"alias": "J", "target": ["-name", "*.java"]},
+        "only-graphql": {"alias": "q", "target": ["-name", "*.graphql"]},
+        "only-el": {"alias": "E", "target": ["-name", "*.el"]},
     },
     "grep": {
         "ignore-binary": {"alias": "I", "target": "-I", "value": True},
@@ -103,6 +103,8 @@ def parse_cmdline(config: dict) -> Namespace:
     parser = ArgumentParser()
     ns = Namespace()
 
+    only_group = parser.add_mutually_exclusive_group()
+
     for section, options in config.items():
         for disabled in [n for n in options if options[n].get("disabled")]:
             del options[disabled]
@@ -120,7 +122,11 @@ def parse_cmdline(config: dict) -> Namespace:
             elif section == "grep":
                 kwargs["help"] = f"Adds '{opt['target']}' to grep"
 
-            arg = parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
+            if name.startswith("only-"):
+                arg = only_group.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
+            else:
+                arg = parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
+
             ns.register_option(arg.dest, opt)
 
     parser.add_argument("--print-cmd", action="store_true")
