@@ -103,7 +103,7 @@ def parse_cmdline(config: dict) -> Namespace:
     parser = ArgumentParser()
     ns = Namespace()
 
-    for options in config.values():
+    for section, options in config.items():
         for disabled in [n for n in options if options[n].get("disabled")]:
             del options[disabled]
 
@@ -114,6 +114,11 @@ def parse_cmdline(config: dict) -> Namespace:
                 kwargs = {"action": "store_true"}
                 if opt.get("value"):
                     name = f"no-{name}"
+
+            if section == "find":
+                kwargs["help"] = f"Adds '{' '.join(opt['target'])}' to find"
+            elif section == "grep":
+                kwargs["help"] = f"Adds '{opt['target']}' to grep"
 
             arg = parser.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
             ns.register_option(arg.dest, opt)
