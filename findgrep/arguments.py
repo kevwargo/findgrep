@@ -24,9 +24,6 @@ def parse_cmdline(config: dict) -> Arguments:
     mutex_groups = defaultdict(parser.add_mutually_exclusive_group)
 
     for section, options in config.items():
-        for disabled in [n for n in options if options[n].get("disabled")]:
-            del options[disabled]
-
         for name, opt in options.items():
             if type_ := opt.get("type"):
                 kwargs = {"type": getattr(builtins, type_)}
@@ -42,12 +39,8 @@ def parse_cmdline(config: dict) -> Arguments:
             elif section == "grep":
                 kwargs["help"] = f"Adds '{opt['target']}' to grep"
 
-            arg_container = parser
-            if g := opt.get("mutex-group"):
-                arg_container = mutex_groups[g]
-
+            arg_container = mutex_groups[g] if (g := opt.get("mutex-group")) else parser
             arg = arg_container.add_argument(f"-{opt['alias']}", f"--{name}", **kwargs)
-
             args.register_option(arg.dest, opt)
 
     parser.add_argument("--print-cmd", action="store_true")

@@ -62,6 +62,9 @@ def load_config() -> dict:
         if isinstance(local_config, dict):
             _merge_in(config, local_config)
 
+    for section, options in config.items():
+        config[section] = {name: opt for name, opt in options.items() if not opt.get("disabled")}
+
     return config
 
 

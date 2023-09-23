@@ -41,25 +41,21 @@ def render_option(opt: dict) -> str:
     key = opt["alias"]
 
     words = opt["name"].split("-")
-    if words[0] == "no":
-        words[0] = "Don't"
-    words[0] = words[0].capitalize()
-    name = " ".join(words)
+    words[0] = "Don't" if words[0] == "no" else words[0].capitalize()
+    description = " ".join(words)
 
     short_arg = f'-{opt["alias"]}'
     long_arg = f'--{opt["name"]}'
 
     if opt.get("type"):
         long_arg += "="
-        transient_class = "option"
+        argument_class = "findgrep-option"
     else:
-        transient_class = "switch"
+        argument_class = "findgrep-switch"
 
-    if g := opt.get("mutex-group"):
-        mutex_group = f" :mutex-group {g}"
-        transient_class = f"findgrep--{transient_class}-mutex"
-    else:
-        mutex_group = ""
-        transient_class = f"transient-{transient_class}"
+    mutex_group = opt.get("mutex-group") or "nil"
 
-    return f'  ("{key}" "{name}" ("{short_arg}" "{long_arg}") :class {transient_class}{mutex_group})'
+    definition = f'"{key}" "{description}" ("{short_arg}" "{long_arg}")'
+    keywords = f":class {argument_class} :mutex-group {mutex_group}"
+
+    return f"  ({definition}\n   {keywords})"
