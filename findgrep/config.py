@@ -35,7 +35,7 @@ DEFAULT_CONFIG = {
         "only-python": {"alias": "p", "target": ["-name", "*.py"], "mutex-group": "select"},
         "only-typescript": {"alias": "t", "target": ["-name", "*.ts"], "mutex-group": "select"},
         "only-java": {"alias": "J", "target": ["-name", "*.java"], "mutex-group": "select"},
-        "only-graphql": {"alias": "q", "target": ["-name", "*.graphql"], "mutex-group": "select"},
+        "only-graphql": {"alias": "Q", "target": ["-name", "*.graphql"], "mutex-group": "select"},
         "only-el": {"alias": "E", "target": ["-name", "*.el"], "mutex-group": "select"},
     },
     "grep": {
