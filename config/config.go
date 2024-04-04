@@ -10,30 +10,33 @@ import (
 )
 
 type Config struct {
-	ExcludePaths Options `yaml:"exclude-paths" json:"exclude-paths,omitempty"`
-	ExcludeFiles Options `yaml:"exclude-files" json:"exclude-files,omitempty"`
-	SelectFiles  Options `yaml:"select-files" json:"select-files,omitempty"`
-	Grep         Options `yaml:"grep" json:"grep,omitempty"`
+	ExcludePaths Options `yaml:"exclude-paths"`
+	ExcludeFiles Options `yaml:"exclude-files"`
+	SelectFiles  Options `yaml:"select-files"`
+	Grep         Options `yaml:"grep"`
 }
 
 type Option struct {
-	Name       string        `yaml:"-" json:"name,omitempty"`
-	Arg        string        `yaml:"arg" json:"arg,omitempty"`
-	Alias      string        `yaml:"alias" json:"alias,omitempty"`
-	Key        string        `yaml:"key" json:"key,omitempty"`
-	Default    any           `yaml:"default" json:"default,omitempty"`
-	MutexGroup string        `yaml:"mutex-group" json:"mutex-group,omitempty"`
-	Disabled   *bool         `yaml:"disabled" json:"disabled,omitempty"`
-	Pattern    stringOrSlice `yaml:"pattern" json:"pattern,omitempty"`
-	Target     stringOrSlice `yaml:"target" json:"target,omitempty"`
+	Name       string        `yaml:"-"`
+	Arg        string        `yaml:"arg"`
+	Alias      string        `yaml:"alias"`
+	Key        string        `yaml:"key"`
+	Default    any           `yaml:"default"`
+	Type       string        `yaml:"type"`
+	MutexGroup string        `yaml:"mutex-group"`
+	Disabled   *bool         `yaml:"disabled"`
+	Pattern    stringOrSlice `yaml:"pattern"`
+	Target     stringOrSlice `yaml:"target"`
 }
 
 type Options []Option
 
+type stringOrSlice []string
+
 func (o *Options) UnmarshalYAML(n *yaml.Node) error {
 	var newOptions map[string]Option
 	if err := n.Decode(&newOptions); err != nil {
-		return fmt.Errorf("decoding optoins map: %w", err)
+		return fmt.Errorf("decoding options map: %w", err)
 	}
 
 	for idx := range *o {
@@ -56,7 +59,23 @@ func (o *Options) UnmarshalYAML(n *yaml.Node) error {
 	return nil
 }
 
-type stringOrSlice []string
+func (o *Option) merge(src Option) {
+	if src.Arg != "" {
+		o.Arg = src.Arg
+	}
+	if src.Alias != "" {
+		o.Alias = src.Alias
+	}
+	if src.Key != "" {
+		o.Key = src.Key
+	}
+	if src.Default != nil {
+		o.Default = src.Default
+	}
+	if src.Disabled != nil {
+		o.Disabled = src.Disabled
+	}
+}
 
 func (s *stringOrSlice) UnmarshalYAML(n *yaml.Node) error {
 	var sliceErr error
@@ -74,21 +93,4 @@ func (s *stringOrSlice) UnmarshalYAML(n *yaml.Node) error {
 	*s = []string{str}
 
 	return nil
-}
-
-func yamlKind(k yaml.Kind) string {
-	switch k {
-	case yaml.DocumentNode:
-		return "document"
-	case yaml.SequenceNode:
-		return "sequence"
-	case yaml.MappingNode:
-		return "mapping"
-	case yaml.ScalarNode:
-		return "scalar"
-	case yaml.AliasNode:
-		return "alias"
-	default:
-		return "<unknown>"
-	}
 }
