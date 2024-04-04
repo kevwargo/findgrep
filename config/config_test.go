@@ -4,7 +4,7 @@ import (
 	"embed"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
 	"github.com/kevwargo/findgrep/config"
@@ -24,7 +24,7 @@ func TestMerge(t *testing.T) {
 
 	for _, entry := range entries {
 		contents, err := fixtures.ReadFile("testdata/" + entry.Name())
-		assert.NoError(t, err, "reading fixture", entry.Name())
+		require.NoError(t, err, "reading fixture", entry.Name())
 
 		if entry.Name() == "merged.yml" {
 			merged = contents
@@ -33,15 +33,14 @@ func TestMerge(t *testing.T) {
 		}
 	}
 
-	if merged == nil {
-		t.Fatal("merged config fixture not found")
-	}
-
 	var expected, actual config.Config
-	assert.NoError(t, yaml.Unmarshal(merged, &expected))
+
+	require.NotNil(t, merged)
+	require.NoError(t, yaml.Unmarshal(merged, &expected))
+
 	for _, src := range sources {
-		assert.NoError(t, yaml.Unmarshal(src, &actual))
+		require.NoError(t, yaml.Unmarshal(src, &actual))
 	}
 
-	assert.Equal(t, expected, actual)
+	require.Equal(t, expected, actual)
 }
