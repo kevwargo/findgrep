@@ -1,4 +1,4 @@
-package config_test
+package config
 
 import (
 	"embed"
@@ -6,41 +6,38 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-
-	"github.com/kevwargo/findgrep/config"
 )
 
-//go:embed testdata/*.yml
+//go:embed all:testdata
 var fixtures embed.FS
 
-func TestMerge(t *testing.T) {
-	var merged []byte
-	var sources [][]byte
+func TestLoad(t *testing.T) {
+	for _, tc := range []struct {
+		dir      string
+		expected string
+	}{
+		{
+			dir:      "1/2/3",
+			expected: "expected-3.yml",
+		},
+		{
+			dir:      "1/2",
+			expected: "expected-2.yml",
+		},
+		{
+			dir:      "1",
+			expected: "expected-1.yml",
+		},
+	} {
+		expectedBody, err := fixtures.ReadFile("testdata/" + tc.expected)
+		require.NoError(t, err)
 
-	entries, err := fixtures.ReadDir("testdata")
-	if err != nil {
-		panic(err)
+		expected := new(Config)
+		require.NoError(t, yaml.Unmarshal(expectedBody, expected))
+
+		actual, err := load("testdata/"+tc.dir, fixtures.Open)
+		require.NoError(t, err)
+
+		require.Equal(t, expected, actual, "%s %s", tc.dir, tc.expected)
 	}
-
-	for _, entry := range entries {
-		contents, err := fixtures.ReadFile("testdata/" + entry.Name())
-		require.NoError(t, err, "reading fixture", entry.Name())
-
-		if entry.Name() == "merged.yml" {
-			merged = contents
-		} else {
-			sources = append(sources, contents)
-		}
-	}
-
-	var expected, actual config.Config
-
-	require.NotNil(t, merged)
-	require.NoError(t, yaml.Unmarshal(merged, &expected))
-
-	for _, src := range sources {
-		require.NoError(t, yaml.Unmarshal(src, &actual))
-	}
-
-	require.Equal(t, expected, actual)
 }

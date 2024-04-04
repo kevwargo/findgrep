@@ -11,6 +11,7 @@ select-files:
     pattern: "*.go"
   python:
     pattern: "*.py"
+    disabled: true
 
 exclude-paths:
   venv:

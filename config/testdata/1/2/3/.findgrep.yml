@@ -3,3 +3,7 @@ grep:
     disabled: false
   show-name:
     default: false
+
+select-files:
+  python:
+    disabled: false
