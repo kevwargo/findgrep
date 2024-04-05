@@ -2,28 +2,33 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func (o *Option) RegisterFlag(flagSet *pflag.FlagSet, prefix string) {
-	arg := o.Arg
+	name := o.Arg
 
-	if arg == "" {
-		arg = prefix + o.Name
+	if name == "" {
+		name = prefix + o.Name
 	}
 
 	noOptVal := ""
-	if o.CustomType == "" {
+	if o.isBool() {
 		noOptVal = "true"
-		if o.Default == true {
-			arg = "no-" + arg
-		}
+	}
+	if o.isInverted() {
+		name = "no-" + name
 	}
 
-	f := flagSet.VarPF(&flag{o}, arg, o.Alias, arg)
+	f := flagSet.VarPF(&flag{o}, name, o.Alias, name)
 	f.NoOptDefVal = noOptVal
+	if o.AllowedValues != nil && o.Default == nil {
+		cobra.MarkFlagRequired(flagSet, name)
+	}
 }
 
 type flag struct {
@@ -41,6 +46,8 @@ func (f *flag) Set(raw string) error {
 			return fmt.Errorf("internal error: unexpected bool value: %q", raw)
 		}
 		f.o.Value = true
+	case "str":
+		f.o.Value = raw
 	case "int":
 		x, err := strconv.Atoi(raw)
 		if err != nil {
@@ -48,7 +55,14 @@ func (f *flag) Set(raw string) error {
 		}
 		f.o.Value = x
 	default:
+		// shouldn't happen, as the types are validated when unmarshalling
 		return fmt.Errorf("invalid option type %q", f.o.CustomType)
+	}
+
+	if f.o.AllowedValues != nil {
+		if !slices.Contains(f.o.AllowedValues, f.o.Value) {
+			return fmt.Errorf("%q is not one of the allowed %v", f.o.Value, f.o.AllowedValues)
+		}
 	}
 
 	return nil
