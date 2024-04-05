@@ -19,9 +19,6 @@ exclude-paths:
     default: true
 
 ignore-files:
-  mocks:
-    pattern: "*_mock.go"
-    default: true
   autosave:
     pattern: "*~"
     default: true
@@ -56,7 +53,6 @@ select-files:
   python:
     pattern: "*.py"
     default: true
-    disabled: true
   typescript:
     pattern: "*.ts"
     default: true
@@ -80,9 +76,6 @@ grep:
   show-filename:
     target: -H
     default: true
-  show-name:
-    target: -H
-    default: true
   filenames-only:
     target: -l
   fixed-string:
@@ -104,10 +97,3 @@ grep:
   after:
     target: -A
     type: int
-  lines:
-    target: -n
-    default: true
-    disabled: true
-  first:
-    default: true
-    pattern: one

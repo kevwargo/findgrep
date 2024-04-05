@@ -14,7 +14,7 @@ import (
 
 type Config struct {
 	ExcludePaths Options `yaml:"exclude-paths"`
-	ExcludeFiles Options `yaml:"exclude-files"`
+	IgnoreFiles  Options `yaml:"ignore-files"`
 	SelectFiles  Options `yaml:"select-files"`
 	Grep         Options `yaml:"grep"`
 }
@@ -31,6 +31,11 @@ func Load(dir string) (*Config, error) {
 }
 
 func load(path string, openFn func(string) (fs.File, error)) (*Config, error) {
+	cfg, err := loadDefault()
+	if err != nil {
+		return nil, err
+	}
+
 	var files []fs.File
 	defer func() {
 		for _, f := range files {
@@ -50,14 +55,13 @@ func load(path string, openFn func(string) (fs.File, error)) (*Config, error) {
 		files = append(files, f)
 	}
 
-	var cfg Config
 	for i := len(files) - 1; i >= 0; i-- {
-		if err := yaml.NewDecoder(files[i]).Decode(&cfg); err != nil {
+		if err := yaml.NewDecoder(files[i]).Decode(cfg); err != nil {
 			return nil, err
 		}
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 type Option struct {

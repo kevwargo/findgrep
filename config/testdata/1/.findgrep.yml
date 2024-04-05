@@ -15,10 +15,10 @@ select-files:
 
 exclude-paths:
   venv:
-    pattern: venv
+    pattern: venv # doesn't have an effect, because the pattern is not overridable
     default: true
 
-exclude-files:
+ignore-files:
   mocks:
     pattern: "*_mock.go"
     default: true

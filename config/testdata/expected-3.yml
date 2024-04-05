@@ -1,4 +1,109 @@
+exclude-paths:
+  cdk:
+    pattern: cdk.out
+    default: true
+  node-modules:
+    pattern: node_modules
+    default: true
+  git:
+    pattern: .git
+    default: true
+  venv:
+    pattern: .venv
+    default: true
+  cover:
+    pattern: cover
+    default: true
+  serverless:
+    pattern: .serverless
+    default: true
+
+ignore-files:
+  mocks:
+    pattern: "*_mock.go"
+    default: true
+  autosave:
+    pattern: "*~"
+    default: true
+  temp-sockets:
+    pattern: ".#*"
+    default: true
+  emacs-temp:
+    pattern: "#*#"
+    default: true
+  d-ts:
+    pattern: "*.d.ts"
+    default: true
+  js:
+    pattern: "*.js"
+    default: true
+  locks:
+    pattern:
+      - package-lock.json
+      - yarn.lock
+      - Pipfile.lock
+    default: true
+  tests:
+    pattern:
+      - "test_*.py"
+      - "*_test.go"
+    default: true
+
+select-files:
+  go:
+    pattern: "*.go"
+    default: true
+  python:
+    pattern: "*.py"
+    default: true
+    disabled: false
+  typescript:
+    pattern: "*.ts"
+    default: true
+  java:
+    pattern: "*.java"
+    default: true
+  graphql:
+    pattern: "*.graphql"
+    default: true
+  elisp:
+    pattern: "*.el"
+    default: true
+
 grep:
+  ignore-binary:
+    target: -I
+    default: true
+  show-lines:
+    target: -n
+    default: true
+  show-filename:
+    target: -H
+    default: true
+  show-name:
+    target: -H
+    default: false
+  filenames-only:
+    target: -l
+  fixed-string:
+    target: -F
+    mutex-group: pattern
+  extended-regexp:
+    target: -E
+    mutex-group: pattern
+  perl-regexp:
+    target: -P
+    mutex-group: pattern
+  whole-word:
+    target: -w
+  ignore-case:
+    target: -i
+  before:
+    target: -B
+    type: int
+  after:
+    target: -A
+    type: int
   lines:
     target: -n
     default: true
@@ -6,25 +111,3 @@ grep:
   first:
     default: true
     pattern: one
-  show-name:
-    target: -H
-    default: false
-
-select-files:
-  go:
-    pattern: "*.go"
-  python:
-    pattern: "*.py"
-    disabled: false
-
-exclude-paths:
-  venv:
-    pattern: venv
-    default: true
-
-exclude-files:
-  mocks:
-    pattern: "*_mock.go"
-    default: true
-  tests:
-    pattern: "*_test.go"
