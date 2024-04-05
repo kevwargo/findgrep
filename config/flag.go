@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"slices"
-	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -40,38 +39,22 @@ func (f *flag) String() string {
 }
 
 func (f *flag) Set(raw string) error {
-	switch f.o.CustomType {
-	case "":
-		if raw != "true" {
-			return fmt.Errorf("internal error: unexpected bool value: %q", raw)
-		}
-		f.o.Value = true
-	case "str":
-		f.o.Value = raw
-	case "int":
-		x, err := strconv.Atoi(raw)
-		if err != nil {
-			return err
-		}
-		f.o.Value = x
-	default:
-		// shouldn't happen, as the types are validated when unmarshalling
-		return fmt.Errorf("invalid option type %q", f.o.CustomType)
+	v, err := f.o.setValueFn(raw)
+	if err != nil {
+		return err
 	}
 
 	if f.o.AllowedValues != nil {
-		if !slices.Contains(f.o.AllowedValues, f.o.Value) {
-			return fmt.Errorf("%q is not one of the allowed %v", f.o.Value, f.o.AllowedValues)
+		if !slices.Contains(f.o.AllowedValues, v) {
+			return fmt.Errorf("%q is not one of the allowed %v", v, f.o.AllowedValues)
 		}
 	}
+
+	f.o.Value = v
 
 	return nil
 }
 
 func (f *flag) Type() string {
-	if f.o.CustomType == "" {
-		return "bool"
-	}
-
 	return f.o.CustomType
 }
