@@ -2,6 +2,8 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -24,16 +26,21 @@ func Load(dir string) (*Config, error) {
 		return nil, err
 	}
 
-	return load(path, func(n string) (fs.File, error) { return os.Open(n) })
+	return load(path, func(n string) (namedFile, error) { return os.Open(n) })
 }
 
-func load(path string, openFn func(string) (fs.File, error)) (*Config, error) {
+type namedFile interface {
+	fs.File
+	Name() string
+}
+
+func load(path string, openFn func(string) (namedFile, error)) (*Config, error) {
 	cfg, err := loadDefault()
 	if err != nil {
 		return nil, err
 	}
 
-	var files []fs.File
+	var files []namedFile
 	defer func() {
 		for _, f := range files {
 			f.Close()
@@ -54,7 +61,11 @@ func load(path string, openFn func(string) (fs.File, error)) (*Config, error) {
 
 	for i := len(files) - 1; i >= 0; i-- {
 		if err := yaml.NewDecoder(files[i]).Decode(cfg); err != nil {
-			return nil, err
+			if errors.Is(err, io.EOF) {
+				continue
+			}
+
+			return nil, fmt.Errorf("parsing config file %q: %w", files[i].Name(), err)
 		}
 	}
 

@@ -2,6 +2,7 @@ package config
 
 import (
 	"embed"
+	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,9 +36,28 @@ func TestLoad(t *testing.T) {
 		expected := new(Config)
 		require.NoError(t, yaml.Unmarshal(expectedBody, expected))
 
-		actual, err := load("testdata/"+tc.dir, fixtures.Open)
+		actual, err := load("testdata/"+tc.dir, openFixtureNamed)
 		require.NoError(t, err)
 
 		require.Equal(t, expected, actual, "%s %s", tc.dir, tc.expected)
 	}
+}
+
+type embeddedNamedFile struct {
+	fs.File
+
+	name string
+}
+
+func (f *embeddedNamedFile) Name() string {
+	return f.name
+}
+
+func openFixtureNamed(name string) (namedFile, error) {
+	f, err := fixtures.Open(name)
+
+	return &embeddedNamedFile{
+		File: f,
+		name: name,
+	}, err
 }
