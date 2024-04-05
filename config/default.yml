@@ -97,3 +97,11 @@ grep:
   after:
     target: -A
     type: int
+  color:
+    target: --color
+    type: str
+    allowed-values:
+      - always
+      - never
+      - auto
+    default: always

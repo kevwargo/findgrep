@@ -107,3 +107,11 @@ grep:
   first:
     default: true
     pattern: one
+  color:
+    target: --color
+    type: str
+    allowed-values:
+      - always
+      - never
+      - auto
+    default: always

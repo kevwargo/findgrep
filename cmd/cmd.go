@@ -54,7 +54,7 @@ func run(cfg *config.Config, patterns []string) error {
 		}
 	}
 
-	args = append(args, "-exec", "grep", "--color=always")
+	args = append(args, "-exec", "grep")
 	for _, opt := range cfg.Grep {
 		args = opt.AppendArgs(args)
 	}

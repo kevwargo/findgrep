@@ -4,3 +4,5 @@ grep:
     default: true
   lines:
     disabled: true
+  color:
+    default: never
