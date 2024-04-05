@@ -49,22 +49,22 @@ ignore-files:
 select-files:
   go:
     pattern: "*.go"
-    default: true
+    mutex-group: select
   python:
     pattern: "*.py"
-    default: true
+    mutex-group: select
   typescript:
     pattern: "*.ts"
-    default: true
+    mutex-group: select
   java:
     pattern: "*.java"
-    default: true
+    mutex-group: select
   graphql:
     pattern: "*.graphql"
-    default: true
+    mutex-group: select
   elisp:
     pattern: "*.el"
-    default: true
+    mutex-group: select
 
 grep:
   ignore-binary:
