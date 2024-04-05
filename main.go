@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kevwargo/findgrep/config/cmd"
+	"github.com/kevwargo/findgrep/cmd"
 )
 
 func main() {
