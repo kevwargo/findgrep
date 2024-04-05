@@ -11,6 +11,10 @@ func Print(cfg *config.Config) error {
 		return err
 	}
 
+	for _, opt := range cfg.SelectFiles {
+		opt.MutexGroup = "select"
+	}
+
 	fmt.Print("(")
 	printGroup("Exclude paths", cfg.ExcludePaths, true, false)
 	printGroup("Ignore files", cfg.IgnoreFiles, false, false)
