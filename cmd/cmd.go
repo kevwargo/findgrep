@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -16,56 +15,32 @@ func Execute() error {
 		return err
 	}
 
+	var printCmd, printElispTransient bool
+
 	c := &cobra.Command{
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		RunE: func(_ *cobra.Command, args []string) error {
-			return run(cfg, args)
+		RunE: func(_ *cobra.Command, patterns []string) error {
+			if printElispTransient {
+				return printElisp(cfg)
+			}
+
+			findCmd := buildCommand(cfg, patterns)
+			if !printCmd {
+				return run(findCmd)
+			}
+
+			fmt.Printf("%q\n", findCmd.Args)
+			return nil
 		},
 	}
+
+	c.Flags().BoolVar(&printCmd, "print-cmd", false, "Print the find command without actually executing")
+	c.Flags().BoolVar(&printElispTransient, "print-elisp-transient", false, "Print the Emacs Lisp transient config")
 
 	registerConfigFlags(cfg, c.Flags())
 
 	return c.Execute()
-}
-
-func run(cfg *config.Config, patterns []string) error {
-	args := []string{"find", "."}
-
-	for _, opt := range cfg.ExcludePaths {
-		for _, pattern := range opt.Pattern {
-			if !(strings.ContainsAny(pattern, "*/")) {
-				pattern = fmt.Sprintf("*/%s/*", pattern)
-			}
-
-			args = opt.AppendArgs(args, "!", "-path", pattern)
-		}
-	}
-
-	for _, opt := range cfg.IgnoreFiles {
-		for _, pattern := range opt.Pattern {
-			args = opt.AppendArgs(args, "!", "-name", pattern)
-		}
-	}
-
-	for _, opt := range cfg.SelectFiles {
-		for _, pattern := range opt.Pattern {
-			args = opt.AppendArgs(args, "-name", pattern)
-		}
-	}
-
-	args = append(args, "-exec", "grep")
-	for _, opt := range cfg.Grep {
-		args = opt.AppendArgs(args)
-	}
-	for _, pattern := range patterns {
-		args = append(args, "-e", pattern)
-	}
-	args = append(args, "{}", "+")
-
-	fmt.Println(args)
-
-	return nil
 }
 
 func registerConfigFlags(cfg *config.Config, flagSet *pflag.FlagSet) {
