@@ -24,19 +24,42 @@ type Option struct {
 	Target     stringOrSlice `yaml:"target"`
 }
 
-func (o *Option) String() string {
-	return ""
+func (o *Option) AppendArgs(args []string, values ...string) []string {
+	if o.skip() {
+		return args
+	}
+
+	if len(values) == 0 {
+		switch o.Value.(type) {
+		case nil, bool:
+			values = o.Target
+		default:
+			for _, target := range o.Target {
+				values = append(values, target, fmt.Sprint(o.Value))
+			}
+		}
+	}
+
+	return append(args, values...)
 }
 
-func (o *Option) Set(raw string) error {
-	return nil
+func (o *Option) skip() bool {
+	valueEmpty := false
+	switch o.Value {
+	case nil, false, "":
+		valueEmpty = true
+	}
+
+	defaultEmpty := false
+	switch o.Default {
+	case nil, false, "":
+		defaultEmpty = true
+	}
+
+	return valueEmpty == defaultEmpty
 }
 
-func (o *Option) Type() string {
-	return ""
-}
-
-func (o *Option) merge(src Option) {
+func (o *Option) merge(src *Option) {
 	if src.Arg != "" {
 		o.Arg = src.Arg
 	}
@@ -54,10 +77,10 @@ func (o *Option) merge(src Option) {
 	}
 }
 
-type Options []Option
+type Options []*Option
 
 func (o *Options) UnmarshalYAML(n *yaml.Node) error {
-	var newOptions map[string]Option
+	var newOptions map[string]*Option
 	if err := n.Decode(&newOptions); err != nil {
 		return fmt.Errorf("decoding options map: %w", err)
 	}
@@ -65,7 +88,9 @@ func (o *Options) UnmarshalYAML(n *yaml.Node) error {
 	for idx := range *o {
 		name := (*o)[idx].Name
 		if newOpt, ok := newOptions[name]; ok {
-			(*o)[idx].merge(newOpt)
+			if newOpt != nil {
+				(*o)[idx].merge(newOpt)
+			}
 			delete(newOptions, name)
 		}
 	}
@@ -75,7 +100,7 @@ func (o *Options) UnmarshalYAML(n *yaml.Node) error {
 		*o = append(*o, newOpt)
 	}
 
-	slices.SortFunc(*o, func(opt1, opt2 Option) int {
+	slices.SortFunc(*o, func(opt1, opt2 *Option) int {
 		return cmp.Compare(opt1.Name, opt2.Name)
 	})
 
