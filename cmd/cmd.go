@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/kevwargo/findgrep/cmd/elisp"
 	"github.com/kevwargo/findgrep/config"
 )
 
@@ -22,16 +21,15 @@ func Execute() error {
 		SilenceUsage:  true,
 		RunE: func(_ *cobra.Command, patterns []string) error {
 			if printElispTransient {
-				return printElisp(cfg)
+				return elisp.Print(cfg)
 			}
 
 			findCmd := buildCommand(cfg, patterns)
-			if !printCmd {
-				return run(findCmd)
+			if printCmd {
+				return printCommand(findCmd.Args...)
 			}
 
-			fmt.Printf("%q\n", findCmd.Args)
-			return nil
+			return run(findCmd)
 		},
 	}
 

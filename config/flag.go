@@ -16,10 +16,10 @@ func (o *Option) RegisterFlag(flagSet *pflag.FlagSet, prefix string) {
 	}
 
 	noOptVal := ""
-	if o.isBool() {
+	if o.IsBool() {
 		noOptVal = "true"
 	}
-	if o.isInverted() {
+	if o.IsInverted() {
 		name = "no-" + name
 	}
 
@@ -28,6 +28,7 @@ func (o *Option) RegisterFlag(flagSet *pflag.FlagSet, prefix string) {
 	if o.AllowedValues != nil && o.Default == nil {
 		cobra.MarkFlagRequired(flagSet, name)
 	}
+	o.flag = f
 }
 
 type flag struct {

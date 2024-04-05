@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
@@ -26,12 +27,13 @@ type Option struct {
 	Pattern       stringOrSlice `yaml:"pattern"`
 	Target        stringOrSlice `yaml:"target"`
 
+	flag       *pflag.Flag
 	setValueFn func(string) (any, error)
 }
 
 func (o *Option) AppendArgs(args []string, values ...string) []string {
 	value := o.Value
-	if o.isInverted() {
+	if o.IsInverted() {
 		if value == true {
 			value = nil
 		} else {
@@ -62,12 +64,16 @@ func (o *Option) AppendArgs(args []string, values ...string) []string {
 	return append(args, values...)
 }
 
-func (o *Option) isBool() bool {
+func (o *Option) Flag() *pflag.Flag {
+	return o.flag
+}
+
+func (o *Option) IsBool() bool {
 	return o.CustomType == "bool"
 }
 
-func (o *Option) isInverted() bool {
-	return o.isBool() && o.Default == true
+func (o *Option) IsInverted() bool {
+	return o.IsBool() && o.Default == true
 }
 
 func (o *Option) merge(src *Option) {

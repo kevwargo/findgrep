@@ -1,0 +1,58 @@
+package elisp
+
+import (
+	"fmt"
+
+	"github.com/kevwargo/findgrep/config"
+)
+
+func Print(cfg *config.Config) error {
+	if err := resolveKeys(cfg.SelectFiles, cfg.Grep, cfg.ExcludePaths, cfg.IgnoreFiles); err != nil {
+		return err
+	}
+
+	fmt.Print("(")
+	printGroup("Exclude paths", cfg.ExcludePaths, true, false)
+	printGroup("Ignore files", cfg.IgnoreFiles, false, false)
+	printGroup("Select files", cfg.SelectFiles, false, false)
+	printGroup("Grep options", cfg.Grep, false, true)
+	fmt.Println(")")
+
+	return nil
+}
+
+func printGroup(name string, options config.Options, first, last bool) {
+	if !first {
+		fmt.Print(" ")
+	}
+	fmt.Printf("[%q\n", name)
+
+	count := len(options)
+	for i := 0; i < count; i++ {
+		printOption(options[i], i == count-1)
+	}
+
+	fmt.Print("]")
+	if !last {
+		fmt.Println()
+	}
+}
+
+func printOption(opt *config.Option, last bool) {
+	longArg := "--" + opt.Flag().Name
+	class := "findgrep-switch"
+	if !opt.IsBool() {
+		class = "findgrep-option"
+		longArg += "="
+	}
+
+	var mutex string
+	if m := opt.MutexGroup; m != "" {
+		mutex = fmt.Sprintf(" :mutex-group %s", m)
+	}
+
+	fmt.Printf("  (%q %q %q :class %s%s)", opt.Key, opt.Name, longArg, class, mutex)
+	if !last {
+		fmt.Println()
+	}
+}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,9 +12,21 @@ import (
 
 func run(c *exec.Cmd) error {
 	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
+	stderr := bytes.Buffer{}
+	c.Stderr = &stderr
 
-	return c.Run()
+	err := c.Run()
+	if err == nil {
+		return nil
+	}
+
+	if ee, ok := err.(*exec.ExitError); ok {
+		if ee.ExitCode() == 1 && stderr.Len() == 0 {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%w: %s", err, strings.Trim(stderr.String(), "\n"))
 }
 
 func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
@@ -51,6 +64,18 @@ func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
 	args = append(args, "{}", "+")
 
 	return exec.Command(findExecutable, args...)
+}
+
+func printCommand(args ...string) error {
+	for i, arg := range args {
+		if strings.ContainsAny(arg, ` "'`) {
+			args[i] = fmt.Sprintf("%q", arg)
+		}
+	}
+
+	fmt.Println(strings.Join(args, " "))
+
+	return nil
 }
 
 const (
