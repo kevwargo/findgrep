@@ -112,7 +112,7 @@ grep:
     default: true
     pattern: one
   color:
-    target: --color
+    target: --color=
     type: str
     allowed-values:
       - always

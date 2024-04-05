@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -50,7 +51,11 @@ func (o *Option) AppendArgs(args []string, values ...string) []string {
 	default:
 		values = nil
 		for _, target := range o.Target {
-			values = append(values, target, fmt.Sprint(value))
+			if strings.HasSuffix(target, "=") {
+				values = append(values, target+fmt.Sprint(value))
+			} else {
+				values = append(values, target, fmt.Sprint(value))
+			}
 		}
 	}
 

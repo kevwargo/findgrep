@@ -98,7 +98,7 @@ grep:
     target: -A
     type: int
   color:
-    target: --color
+    target: --color=
     type: str
     allowed-values:
       - always
