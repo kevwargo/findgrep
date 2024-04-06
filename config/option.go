@@ -35,6 +35,20 @@ type (
 	Options []*Option
 )
 
+type OptionGroup interface {
+	Options() []*Option
+}
+
+func (o Options) Options() []*Option {
+	return o
+}
+
+func (m MiscOptions) Options() []*Option {
+	return []*Option{
+		m.Gzip,
+	}
+}
+
 func (o *Options) UnmarshalYAML(n *yaml.Node) error {
 	var newOptions map[string]*Option
 	if err := n.Decode(&newOptions); err != nil {
@@ -73,7 +87,6 @@ func (o *Option) UnmarshalYAML(n *yaml.Node) error {
 	}
 
 	*o = Option(opt)
-	fmt.Printf("opttype set to %q after validation\n", o.OptType)
 
 	return nil
 }

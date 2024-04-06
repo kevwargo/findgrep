@@ -7,7 +7,7 @@ import (
 )
 
 func Print(cfg *config.Config) error {
-	if err := resolveKeys(cfg.SelectFiles, cfg.Grep, cfg.ExcludePaths, cfg.IgnoreFiles); err != nil {
+	if err := resolveKeys(cfg.SelectFiles, cfg.Grep, cfg.ExcludePaths, cfg.IgnoreFiles, cfg.Misc); err != nil {
 		return err
 	}
 
@@ -19,18 +19,20 @@ func Print(cfg *config.Config) error {
 	printGroup("Exclude paths", cfg.ExcludePaths, true, false)
 	printGroup("Ignore files", cfg.IgnoreFiles, false, false)
 	printGroup("Select files", cfg.SelectFiles, false, false)
-	printGroup("Grep options", cfg.Grep, false, true)
+	printGroup("Grep options", cfg.Grep, false, false)
+	printGroup("Misc options", cfg.Misc, false, true)
 	fmt.Println(")")
 
 	return nil
 }
 
-func printGroup(name string, options config.Options, first, last bool) {
+func printGroup(name string, optionGroup config.OptionGroup, first, last bool) {
 	if !first {
 		fmt.Print(" ")
 	}
 	fmt.Printf("[%q\n", name)
 
+	options := optionGroup.Options()
 	count := len(options)
 	for i := 0; i < count; i++ {
 		printOption(options[i], i == count-1)
@@ -55,7 +57,12 @@ func printOption(opt *config.Option, last bool) {
 		mutex = fmt.Sprintf(" :mutex-group %s", m)
 	}
 
-	fmt.Printf("  (%q %q %q :class %s%s)", opt.Key, opt.Name, longArg, class, mutex)
+	name := opt.Name
+	if name == "" {
+		name = opt.Flag().Name
+	}
+
+	fmt.Printf("  (%q %q %q :class %s%s)", opt.Key, name, longArg, class, mutex)
 	if !last {
 		fmt.Println()
 	}

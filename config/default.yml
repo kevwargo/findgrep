@@ -114,4 +114,5 @@ grep:
 
 misc:
   gzip:
+    alias: Z
     arg: use-gzip

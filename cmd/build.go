@@ -1,33 +1,12 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/kevwargo/findgrep/config"
 )
-
-func run(c *exec.Cmd) error {
-	c.Stdout = os.Stdout
-	stderr := bytes.Buffer{}
-	c.Stderr = &stderr
-
-	err := c.Run()
-	if err == nil {
-		return nil
-	}
-
-	if ee, ok := err.(*exec.ExitError); ok {
-		if ee.ExitCode() == 1 && stderr.Len() == 0 {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("%w: %s", err, strings.Trim(stderr.String(), "\n"))
-}
 
 func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
 	args := []string{"."}
@@ -38,7 +17,12 @@ func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
 	args = append(args, buildIgnoreFiles(cfg)...)
 	args = append(args, buildSelectFiles(cfg)...)
 
-	args = append(args, "-exec", "grep")
+	grep := grepExecutable
+	if cfg.Misc.Gzip.Active() {
+		grep = zgrepExecutable
+	}
+	args = append(args, "-exec", grep)
+
 	args = append(args, buildGrep(cfg, patterns)...)
 
 	args = append(args, "{}", "+")
@@ -77,25 +61,34 @@ func buildIgnoreFiles(cfg *config.Config) (args []string) {
 }
 
 func buildSelectFiles(cfg *config.Config) (args []string) {
+	convertPattern := func(p string) string { return p }
+	if cfg.Misc.Gzip.Active() {
+		convertPattern = func(p string) string { return p + ".gz" }
+	}
+
 	for _, opt := range cfg.SelectFiles {
 		if !opt.Active() {
 			continue
 		}
+
 		switch len(opt.Pattern) {
 		case 0:
 		case 1:
-			args = append(args, "-name", opt.Pattern[0])
+			args = append(args, "-name", convertPattern(opt.Pattern[0]))
 		default:
 			args = append(args, "(")
 			for idx, pattern := range opt.Pattern {
 				if idx > 0 {
 					args = append(args, "-o")
 				}
-				args = append(args, "-name", pattern)
+				args = append(args, "-name", convertPattern(pattern))
 			}
 			args = append(args, ")")
 		}
+	}
 
+	if len(args) == 0 && cfg.Misc.Gzip.Active() {
+		args = []string{"-name", "*.gz"}
 	}
 
 	return args
@@ -133,24 +126,8 @@ func buildGrep(cfg *config.Config, patterns []string) (args []string) {
 	return args
 }
 
-func printCommand(cfg *config.Config, args ...string) error {
-	useGzip := "no gzip"
-	if cfg.Misc.Gzip.Active() {
-		useGzip = "with gzip"
-	}
-	args = append(args, useGzip)
-
-	for i, arg := range args {
-		if strings.ContainsAny(arg, ` "'`) {
-			args[i] = fmt.Sprintf("%q", arg)
-		}
-	}
-
-	fmt.Println(strings.Join(args, " "))
-
-	return nil
-}
-
 const (
-	findExecutable = "find"
+	findExecutable  = "find"
+	grepExecutable  = "grep"
+	zgrepExecutable = "zgrep"
 )

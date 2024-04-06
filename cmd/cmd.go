@@ -1,6 +1,12 @@
 package cmd
 
 import (
+	"bytes"
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -26,10 +32,10 @@ func Execute() error {
 
 			findCmd := buildCommand(cfg, patterns)
 			if printCmd {
-				return printCommand(cfg, findCmd.Args...)
+				return printCommand(findCmd.Args...)
 			}
 
-			return run(findCmd)
+			return runCommand(findCmd)
 		},
 	}
 
@@ -56,4 +62,35 @@ func registerConfigFlags(cfg *config.Config, flagSet *pflag.FlagSet) {
 	}
 
 	cfg.Misc.Gzip.RegisterFlag(flagSet, "")
+}
+
+func runCommand(c *exec.Cmd) error {
+	c.Stdout = os.Stdout
+	stderr := bytes.Buffer{}
+	c.Stderr = &stderr
+
+	err := c.Run()
+	if err == nil {
+		return nil
+	}
+
+	if ee, ok := err.(*exec.ExitError); ok {
+		if ee.ExitCode() == 1 && stderr.Len() == 0 {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%w: %s", err, strings.Trim(stderr.String(), "\n"))
+}
+
+func printCommand(args ...string) error {
+	for i, arg := range args {
+		if strings.ContainsAny(arg, ` "'`) {
+			args[i] = fmt.Sprintf("%q", arg)
+		}
+	}
+
+	fmt.Println(strings.Join(args, " "))
+
+	return nil
 }
