@@ -133,7 +133,13 @@ func buildGrep(cfg *config.Config, patterns []string) (args []string) {
 	return args
 }
 
-func printCommand(args ...string) error {
+func printCommand(cfg *config.Config, args ...string) error {
+	useGzip := "no gzip"
+	if cfg.Misc.Gzip.Active() {
+		useGzip = "with gzip"
+	}
+	args = append(args, useGzip)
+
 	for i, arg := range args {
 		if strings.ContainsAny(arg, ` "'`) {
 			args[i] = fmt.Sprintf("%q", arg)

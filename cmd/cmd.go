@@ -26,7 +26,7 @@ func Execute() error {
 
 			findCmd := buildCommand(cfg, patterns)
 			if printCmd {
-				return printCommand(findCmd.Args...)
+				return printCommand(cfg, findCmd.Args...)
 			}
 
 			return run(findCmd)
@@ -54,4 +54,6 @@ func registerConfigFlags(cfg *config.Config, flagSet *pflag.FlagSet) {
 	for _, opt := range cfg.Grep {
 		opt.RegisterFlag(flagSet, "")
 	}
+
+	cfg.Misc.Gzip.RegisterFlag(flagSet, "")
 }

@@ -111,3 +111,7 @@ grep:
       - never
       - auto
     default: always
+
+misc:
+  gzip:
+    arg: use-gzip

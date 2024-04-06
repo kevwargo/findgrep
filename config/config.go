@@ -12,10 +12,15 @@ import (
 )
 
 type Config struct {
-	ExcludePaths Options `yaml:"exclude-paths"`
-	IgnoreFiles  Options `yaml:"ignore-files"`
-	SelectFiles  Options `yaml:"select-files"`
-	Grep         Options `yaml:"grep"`
+	ExcludePaths Options     `yaml:"exclude-paths"`
+	IgnoreFiles  Options     `yaml:"ignore-files"`
+	SelectFiles  Options     `yaml:"select-files"`
+	Grep         Options     `yaml:"grep"`
+	Misc         MiscOptions `yaml:"misc"`
+}
+
+type MiscOptions struct {
+	Gzip Option `yaml:"gzip"`
 }
 
 const FileName = ".findgrep.yml"

@@ -57,5 +57,5 @@ func (f *flag) Set(raw string) error {
 }
 
 func (f *flag) Type() string {
-	return f.o.CustomType
+	return f.o.OptType
 }
