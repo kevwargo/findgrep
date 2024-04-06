@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
@@ -31,37 +30,19 @@ type Option struct {
 	setValueFn func(string) (any, error)
 }
 
-func (o *Option) AppendArgs(args []string, values ...string) []string {
-	value := o.Value
-	if o.IsInverted() {
-		if value == true {
-			value = nil
-		} else {
-			value = true
+func (o *Option) Active() bool {
+	if o.IsBool() {
+		if o.isInverted() {
+			return o.Value != true
 		}
-	} else if value == nil {
-		value = o.Default
+		return o.Value == true
 	}
 
-	switch value {
-	case nil:
-		return args
-	case true:
-		if len(values) == 0 {
-			values = o.Target
-		}
-	default:
-		values = nil
-		for _, target := range o.Target {
-			if strings.HasSuffix(target, "=") {
-				values = append(values, target+fmt.Sprint(value))
-			} else {
-				values = append(values, target, fmt.Sprint(value))
-			}
-		}
+	if o.Value != nil {
+		return true
 	}
 
-	return append(args, values...)
+	return o.Default != nil
 }
 
 func (o *Option) Flag() *pflag.Flag {
@@ -72,7 +53,7 @@ func (o *Option) IsBool() bool {
 	return o.CustomType == "bool"
 }
 
-func (o *Option) IsInverted() bool {
+func (o *Option) isInverted() bool {
 	return o.IsBool() && o.Default == true
 }
 

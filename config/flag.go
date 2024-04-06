@@ -19,7 +19,7 @@ func (o *Option) RegisterFlag(flagSet *pflag.FlagSet, prefix string) {
 	if o.IsBool() {
 		noOptVal = "true"
 	}
-	if o.IsInverted() {
+	if o.isInverted() {
 		name = "no-" + name
 	}
 
