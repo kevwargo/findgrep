@@ -9,10 +9,6 @@ import (
 )
 
 func resolveKeys(optionSets ...config.Options) error {
-	if allowedKeys == nil {
-		allowedKeys = generateAllowedKeys()
-	}
-
 	s, err := initState(optionSets)
 	if err != nil {
 		return err
@@ -22,8 +18,10 @@ func resolveKeys(optionSets ...config.Options) error {
 }
 
 type state struct {
-	used       map[string]*config.Option
-	unresolved config.Options
+	used        map[string]*config.Option
+	unresolved  config.Options
+	allowedKeys []string
+	allowed     map[string]bool
 }
 
 func initState(optionSets []config.Options) (*state, error) {
@@ -43,9 +41,17 @@ func initState(optionSets []config.Options) (*state, error) {
 		}
 	}
 
+	allowedKeys := generateAllowedKeys()
+	allowed := make(map[string]bool, len(allowedKeys))
+	for _, k := range allowedKeys {
+		allowed[k] = true
+	}
+
 	return &state{
-		used:       used,
-		unresolved: unresolved,
+		used:        used,
+		unresolved:  unresolved,
+		allowedKeys: allowedKeys,
+		allowed:     allowed,
 	}, nil
 }
 
@@ -64,11 +70,13 @@ func (s *state) resolveAll() error {
 			resolved = false
 
 			if pos < len(opt.Name) {
-				if c := string(opt.Name[pos]); !s.resolve(i, c) {
-					s.resolve(i, swapCase(c))
+				if c := string(opt.Name[pos]); s.allowed[c] {
+					if !s.resolve(i, c) {
+						s.resolve(i, swapCase(c))
+					}
 				}
 			} else {
-				for _, k := range allowedKeys {
+				for _, k := range s.allowedKeys {
 					if resolved = s.resolve(i, k); resolved {
 						break
 					}
@@ -120,8 +128,6 @@ func swapCase(c string) string {
 	}
 	return strings.ToUpper(c)
 }
-
-var allowedKeys []string
 
 func generateAllowedKeys() (keys []string) {
 	for r := 'a'; r <= 'z'; r++ {
