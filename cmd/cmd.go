@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -20,12 +21,16 @@ func Execute() error {
 		return err
 	}
 
-	var printCmd, printElispTransient bool
+	var printCmd, printElispTransient, printJSON bool
 
 	c := &cobra.Command{
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(_ *cobra.Command, patterns []string) error {
+			if printJSON {
+				return printConfigJSON(cfg)
+			}
+
 			if printElispTransient {
 				return elisp.Print(cfg)
 			}
@@ -41,10 +46,17 @@ func Execute() error {
 
 	c.Flags().BoolVar(&printCmd, "print-cmd", false, "Print the find command without actually executing")
 	c.Flags().BoolVar(&printElispTransient, "print-elisp-transient", false, "Print the Emacs Lisp transient config")
+	c.Flags().BoolVar(&printJSON, "print-json", false, "Print config in JSON format")
 
 	registerConfigFlags(cfg, c.Flags())
 
 	return c.Execute()
+}
+
+func printConfigJSON(cfg *config.Config) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(cfg)
 }
 
 func registerConfigFlags(cfg *config.Config, flagSet *pflag.FlagSet) {
