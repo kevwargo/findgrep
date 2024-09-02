@@ -32,16 +32,18 @@ func TestLoad(t *testing.T) {
 			expected: "expected-1.yml",
 		},
 	} {
-		expectedBody, err := fixtures.ReadFile("testdata/" + tc.expected)
-		require.NoError(t, err)
+		t.Run(tc.expected, func(tt *testing.T) {
+			expectedBody, err := fixtures.ReadFile("testdata/" + tc.expected)
+			require.NoError(tt, err)
 
-		expected := new(Config)
-		require.NoError(t, yaml.Unmarshal(expectedBody, expected))
+			expected := new(Config)
+			require.NoError(tt, yaml.Unmarshal(expectedBody, expected))
 
-		actual, err := load("testdata/"+tc.dir, openFixtureNamed)
-		require.NoError(t, err)
+			actual, err := load("testdata/"+tc.dir, openFixtureNamed)
+			require.NoError(tt, err)
 
-		require.Equal(t, toJson(expected), toJson(actual), "%s %s", tc.dir, tc.expected)
+			require.Equal(tt, toJson(expected), toJson(actual), "%s %s", tc.dir, tc.expected)
+		})
 	}
 }
 

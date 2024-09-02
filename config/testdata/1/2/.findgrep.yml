@@ -6,3 +6,4 @@ grep:
     disabled: true
   color:
     default: never
+    type: str

@@ -35,6 +35,7 @@ ignore-files:
     pattern: "*.d.ts"
     default: true
   js:
+    alias: j
     pattern: "*.js"
     default: true
   locks:
@@ -44,6 +45,7 @@ ignore-files:
       - Pipfile.lock
     default: true
   tests:
+    alias: T
     pattern:
       - "test_*.py"
       - "*_test.go"
@@ -51,24 +53,24 @@ ignore-files:
 
 select-files:
   go:
+    alias: g
     pattern: "*.go"
-    mutex-group: select
   python:
+    alias: p
     pattern: "*.py"
-    mutex-group: select
     disabled: false
   typescript:
+    alias: t
     pattern: "*.ts"
-    mutex-group: select
   java:
+    alias: J
     pattern: "*.java"
-    mutex-group: select
   graphql:
+    alias: Q
     pattern: "*.graphql"
-    mutex-group: select
   elisp:
+    alias: E
     pattern: "*.el"
-    mutex-group: select
 
 grep:
   ignore-binary:
@@ -86,17 +88,21 @@ grep:
   filenames-only:
     target: -l
   fixed-string:
+    alias: F
     target: -F
     mutex-group: pattern
   extended-regexp:
+    alias: e
     target: -E
     mutex-group: pattern
   perl-regexp:
+    alias: P
     target: -P
     mutex-group: pattern
   whole-word:
     target: -w
   ignore-case:
+    alias: i
     target: -i
   before:
     target: -B
@@ -119,3 +125,8 @@ grep:
       - never
       - auto
     default: never
+
+misc:
+  gzip:
+    alias: Z
+    arg: use-gzip
