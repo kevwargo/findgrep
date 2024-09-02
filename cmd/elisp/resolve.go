@@ -18,10 +18,11 @@ func resolveKeys(optionGroups ...config.OptionGroup) error {
 }
 
 type state struct {
-	used        map[string]*config.Option
-	unresolved  config.Options
-	allowedKeys []string
-	allowed     map[string]bool
+	used            map[string]*config.Option
+	unresolved      config.Options
+	unresolvedCount int
+	keyPool         []string
+	allowed         map[string]bool
 }
 
 func initState(optionGroups []config.OptionGroup) (*state, error) {
@@ -31,8 +32,8 @@ func initState(optionGroups []config.OptionGroup) (*state, error) {
 	for _, group := range optionGroups {
 		for _, opt := range group.Options() {
 			if k := opt.Key; k != "" {
-				if o := used[k]; o != nil {
-					return nil, fmt.Errorf("key %q used by both %q and %q", k, opt.Flag().Name, o.Flag().Name)
+				if other := used[k]; other != nil {
+					return nil, fmt.Errorf("key %q used by both %q and %q", k, opt.Flag().Name, other.Flag().Name)
 				}
 				used[k] = opt
 			} else {
@@ -41,50 +42,32 @@ func initState(optionGroups []config.OptionGroup) (*state, error) {
 		}
 	}
 
-	allowedKeys := generateAllowedKeys()
-	allowed := make(map[string]bool, len(allowedKeys))
-	for _, k := range allowedKeys {
-		allowed[k] = true
+	keyPool := generateKeyPool()
+	allowed := make(map[string]bool, len(keyPool))
+	for _, k := range keyPool {
+		allowed[k] = used[k] == nil
 	}
 
 	return &state{
-		used:        used,
-		unresolved:  unresolved,
-		allowedKeys: allowedKeys,
-		allowed:     allowed,
+		used:            used,
+		unresolved:      unresolved,
+		unresolvedCount: len(unresolved),
+		keyPool:         keyPool,
+		allowed:         allowed,
 	}, nil
 }
 
 func (s *state) resolveAll() error {
-	if s.useAliases() {
-		return nil
-	}
+	s.useAliases()
 
-	for resolved, pos := false, 0; !resolved; pos++ {
-		resolved = true
+	for pos := 0; s.unresolvedCount > 0; pos++ {
 		for i, opt := range s.unresolved {
 			if opt == nil {
 				continue
 			}
 
-			resolved = false
-
-			if pos < len(opt.Name) {
-				if c := string(opt.Name[pos]); s.allowed[c] {
-					if !s.resolve(i, c) {
-						s.resolve(i, swapCase(c))
-					}
-				}
-			} else {
-				for _, k := range s.allowedKeys {
-					if resolved = s.resolve(i, k); resolved {
-						break
-					}
-				}
-
-				if !resolved {
-					return fmt.Errorf("could not find a key for %q", opt.Name)
-				}
+			if !s.resolveFromName(i, pos) && !s.resolveFromPool(i) {
+				return fmt.Errorf("could not find a key for %q", opt.Name)
 			}
 		}
 	}
@@ -92,22 +75,34 @@ func (s *state) resolveAll() error {
 	return nil
 }
 
-func (s *state) useAliases() bool {
-	resolvedAll := true
+func (s *state) resolveFromName(idx int, pos int) bool {
+	if pos >= len(s.unresolved[idx].Name) {
+		return false
+	}
 
-	for i, opt := range s.unresolved {
-		if opt.Alias == "" {
-			resolvedAll = false
-		} else if s.used[opt.Alias] != nil {
-			resolvedAll = false
-		} else {
-			opt.Key = opt.Alias
-			s.unresolved[i] = nil
-			s.used[opt.Key] = opt
+	if k := string(s.unresolved[idx].Name[pos]); s.allowed[k] {
+		return s.resolve(idx, k) || s.resolve(idx, swapCase(k))
+	}
+
+	return false
+}
+
+func (s *state) resolveFromPool(idx int) bool {
+	for _, k := range s.keyPool {
+		if s.resolve(idx, k) {
+			return true
 		}
 	}
 
-	return resolvedAll
+	return false
+}
+
+func (s *state) useAliases() {
+	for i, opt := range s.unresolved {
+		if opt.Alias != "" {
+			s.resolve(i, opt.Alias)
+		}
+	}
 }
 
 func (s *state) resolve(idx int, key string) bool {
@@ -118,6 +113,7 @@ func (s *state) resolve(idx int, key string) bool {
 	s.unresolved[idx].Key = key
 	s.used[key] = s.unresolved[idx]
 	s.unresolved[idx] = nil
+	s.unresolvedCount--
 
 	return true
 }
@@ -129,7 +125,7 @@ func swapCase(c string) string {
 	return strings.ToUpper(c)
 }
 
-func generateAllowedKeys() (keys []string) {
+func generateKeyPool() (keys []string) {
 	for r := 'a'; r <= 'z'; r++ {
 		if r != 'q' {
 			keys = append(keys, string(r))
