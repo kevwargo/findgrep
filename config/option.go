@@ -46,6 +46,7 @@ func (o Options) Options() []*Option {
 func (m MiscOptions) Options() []*Option {
 	return []*Option{
 		m.Gzip,
+		m.Verbose,
 	}
 }
 

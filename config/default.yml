@@ -116,3 +116,5 @@ misc:
   gzip:
     alias: Z
     arg: use-gzip
+  verbose:
+    arg: verbose

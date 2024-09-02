@@ -20,7 +20,8 @@ type Config struct {
 }
 
 type MiscOptions struct {
-	Gzip *Option `yaml:"gzip"`
+	Gzip    *Option `yaml:"gzip"`
+	Verbose *Option `yaml:"verbose"`
 }
 
 const FileName = ".findgrep.yml"

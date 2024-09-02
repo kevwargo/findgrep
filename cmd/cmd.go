@@ -36,8 +36,11 @@ func Execute() error {
 			}
 
 			findCmd := buildCommand(cfg, patterns)
+			if printCmd || cfg.Misc.Verbose.Active() {
+				printCommand(findCmd.Args...)
+			}
 			if printCmd {
-				return printCommand(findCmd.Args...)
+				return nil
 			}
 
 			return runCommand(findCmd)
@@ -74,6 +77,7 @@ func registerConfigFlags(cfg *config.Config, flagSet *pflag.FlagSet) {
 	}
 
 	cfg.Misc.Gzip.RegisterFlag(flagSet, "")
+	cfg.Misc.Verbose.RegisterFlag(flagSet, "")
 }
 
 func runCommand(c *exec.Cmd) error {
@@ -95,7 +99,7 @@ func runCommand(c *exec.Cmd) error {
 	return fmt.Errorf("%w: %s", err, strings.Trim(stderr.String(), "\n"))
 }
 
-func printCommand(args ...string) error {
+func printCommand(args ...string) {
 	for i, arg := range args {
 		if strings.ContainsAny(arg, ` "'`) {
 			args[i] = fmt.Sprintf("%q", arg)
@@ -103,6 +107,4 @@ func printCommand(args ...string) error {
 	}
 
 	fmt.Println(strings.Join(args, " "))
-
-	return nil
 }
