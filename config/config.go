@@ -1,79 +1,86 @@
 package config
 
 import (
-	"errors"
-	"fmt"
-	"io"
-	"io/fs"
-	"os"
-	"path/filepath"
+	"github.com/spf13/pflag"
+)
 
-	"gopkg.in/yaml.v3"
+const (
+	FileName = ".findgrep.yml"
+
+	TypeBool   = "bool"
+	TypeString = "str"
+	TypeInt    = "int"
+
+	MiscGzip    = "gzip"
+	MiscVerbose = "verbose"
 )
 
 type Config struct {
-	ExcludePaths Options     `yaml:"exclude-paths"`
-	IgnoreFiles  Options     `yaml:"ignore-files"`
-	SelectFiles  Options     `yaml:"select-files"`
-	Grep         Options     `yaml:"grep"`
-	Misc         MiscOptions `yaml:"misc"`
+	ExcludePaths OptionGroup `yaml:"exclude-paths"`
+	IgnoreFiles  OptionGroup `yaml:"ignore-files"`
+	SelectFiles  OptionGroup `yaml:"select-files"`
+	Grep         OptionGroup `yaml:"grep"`
+	Misc         OptionGroup `yaml:"misc"`
 }
 
-type MiscOptions struct {
-	Gzip    *Option `yaml:"gzip"`
-	Verbose *Option `yaml:"verbose"`
+type OptionGroup struct {
+	optmap  map[string]*Option
+	ordered []*Option
 }
 
-const FileName = ".findgrep.yml"
+func (o OptionGroup) All() []*Option {
+	return o.ordered
+}
 
-func Load(dir string) (*Config, error) {
-	path, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, err
+func (o OptionGroup) IsSet(name string) bool {
+	if opt := o.optmap[name]; opt != nil {
+		return opt.IsSet()
 	}
 
-	return load(path, func(n string) (namedFile, error) { return os.Open(n) })
+	return false
 }
 
-type namedFile interface {
-	fs.File
-	Name() string
+type Option struct {
+	Name  string `yaml:"-"`
+	Value any    `yaml:"-"`
+
+	Arg           string        `yaml:"arg"`
+	Alias         string        `yaml:"alias"`
+	Key           string        `yaml:"key"`
+	Default       any           `yaml:"default"`
+	OptType       string        `yaml:"type"`
+	AllowedValues []any         `yaml:"allowed-values"`
+	MutexGroup    string        `yaml:"mutex-group"`
+	Disabled      *bool         `yaml:"disabled"`
+	Pattern       stringOrSlice `yaml:"pattern"`
+	Target        stringOrSlice `yaml:"target"`
+
+	flag *pflag.Flag
 }
 
-func load(path string, openFn func(string) (namedFile, error)) (*Config, error) {
-	cfg, err := loadDefault()
-	if err != nil {
-		return nil, err
-	}
-
-	var files []namedFile
-	defer func() {
-		for _, f := range files {
-			f.Close()
+func (o *Option) IsSet() bool {
+	if o.IsBool() {
+		if o.isInverted() {
+			return o.Value != true
 		}
-	}()
-
-	for ; path != filepath.Dir(path); path = filepath.Dir(path) {
-		f, err := openFn(filepath.Join(path, FileName))
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				continue
-			}
-			return nil, err
-		}
-
-		files = append(files, f)
+		return o.Value == true
 	}
 
-	for i := len(files) - 1; i >= 0; i-- {
-		if err := yaml.NewDecoder(files[i]).Decode(cfg); err != nil {
-			if errors.Is(err, io.EOF) {
-				continue
-			}
-
-			return nil, fmt.Errorf("parsing config file %q: %w", files[i].Name(), err)
-		}
+	if o.Value != nil {
+		return true
 	}
 
-	return cfg, nil
+	return o.Default != nil
+}
+
+func (o *Option) Flag() *pflag.Flag {
+	return o.flag
+}
+
+func (o *Option) IsBool() bool {
+	return o.OptType == TypeBool
+}
+
+func (o *Option) isInverted() bool {
+	return o.IsBool() && o.Default == true
 }

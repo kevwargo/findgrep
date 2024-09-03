@@ -2,9 +2,7 @@ package config
 
 import (
 	"embed"
-	"encoding/json"
 	"io/fs"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -36,26 +34,15 @@ func TestLoad(t *testing.T) {
 			expectedBody, err := fixtures.ReadFile("testdata/" + tc.expected)
 			require.NoError(tt, err)
 
-			expected := new(Config)
-			require.NoError(tt, yaml.Unmarshal(expectedBody, expected))
+			var expected Config
+			require.NoError(tt, yaml.Unmarshal(expectedBody, &expected))
 
 			actual, err := load("testdata/"+tc.dir, openFixtureNamed)
 			require.NoError(tt, err)
 
-			require.Equal(tt, toJson(expected), toJson(actual), "%s %s", tc.dir, tc.expected)
+			require.Equal(tt, &expected, actual, "%s %s", tc.dir, tc.expected)
 		})
 	}
-}
-
-func toJson(cfg *Config) string {
-	buf := strings.Builder{}
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(cfg); err != nil {
-		panic(err)
-	}
-
-	return buf.String()
 }
 
 type embeddedNamedFile struct {

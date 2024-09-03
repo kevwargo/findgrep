@@ -17,11 +17,11 @@ func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
 	args = append(args, buildIgnoreFiles(cfg)...)
 	args = append(args, buildSelectFiles(cfg)...)
 
-	grep := grepExecutable
-	if cfg.Misc.Gzip.Active() {
-		grep = zgrepExecutable
+	if cfg.Misc.IsSet(config.MiscGzip) {
+		args = append(args, "-exec", zgrepExecutable)
+	} else {
+		args = append(args, "-exec", grepExecutable)
 	}
-	args = append(args, "-exec", grep)
 
 	args = append(args, buildGrep(cfg, patterns)...)
 
@@ -31,8 +31,8 @@ func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
 }
 
 func buildExcludePaths(cfg *config.Config) (args []string) {
-	for _, opt := range cfg.ExcludePaths {
-		if !opt.Active() {
+	for _, opt := range cfg.ExcludePaths.All() {
+		if !opt.IsSet() {
 			continue
 		}
 		for _, pattern := range opt.Pattern {
@@ -48,8 +48,8 @@ func buildExcludePaths(cfg *config.Config) (args []string) {
 }
 
 func buildIgnoreFiles(cfg *config.Config) (args []string) {
-	for _, opt := range cfg.IgnoreFiles {
-		if !opt.Active() {
+	for _, opt := range cfg.IgnoreFiles.All() {
+		if !opt.IsSet() {
 			continue
 		}
 		for _, pattern := range opt.Pattern {
@@ -61,13 +61,15 @@ func buildIgnoreFiles(cfg *config.Config) (args []string) {
 }
 
 func buildSelectFiles(cfg *config.Config) (args []string) {
+	gzip := cfg.Misc.IsSet(config.MiscGzip)
+
 	convertPattern := func(p string) string { return p }
-	if cfg.Misc.Gzip.Active() {
+	if gzip {
 		convertPattern = func(p string) string { return p + ".gz" }
 	}
 
-	for _, opt := range cfg.SelectFiles {
-		if !opt.Active() {
+	for _, opt := range cfg.SelectFiles.All() {
+		if !opt.IsSet() {
 			continue
 		}
 
@@ -87,7 +89,7 @@ func buildSelectFiles(cfg *config.Config) (args []string) {
 		}
 	}
 
-	if len(args) == 0 && cfg.Misc.Gzip.Active() {
+	if len(args) == 0 && gzip {
 		args = []string{"-name", "*.gz"}
 	}
 
@@ -95,8 +97,8 @@ func buildSelectFiles(cfg *config.Config) (args []string) {
 }
 
 func buildGrep(cfg *config.Config, patterns []string) (args []string) {
-	for _, opt := range cfg.Grep {
-		if !opt.Active() {
+	for _, opt := range cfg.Grep.All() {
+		if !opt.IsSet() {
 			continue
 		}
 

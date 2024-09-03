@@ -19,7 +19,7 @@ func resolveKeys(optionGroups ...config.OptionGroup) error {
 
 type state struct {
 	used            map[string]*config.Option
-	unresolved      config.Options
+	unresolved      []*config.Option
 	unresolvedCount int
 	keyPool         []string
 	allowed         map[string]bool
@@ -27,10 +27,10 @@ type state struct {
 
 func initState(optionGroups []config.OptionGroup) (*state, error) {
 	used := make(map[string]*config.Option)
-	var unresolved config.Options
+	var unresolved []*config.Option
 
 	for _, group := range optionGroups {
-		for _, opt := range group.Options() {
+		for _, opt := range group.All() {
 			if k := opt.Key; k != "" {
 				if other := used[k]; other != nil {
 					return nil, fmt.Errorf("key %q used by both %q and %q", k, opt.Flag().Name, other.Flag().Name)

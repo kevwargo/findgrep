@@ -11,7 +11,7 @@ func Print(cfg *config.Config) error {
 		return err
 	}
 
-	for _, opt := range cfg.SelectFiles {
+	for _, opt := range cfg.SelectFiles.All() {
 		opt.MutexGroup = "select"
 	}
 
@@ -32,7 +32,7 @@ func printGroup(name string, optionGroup config.OptionGroup, first, last bool) {
 	}
 	fmt.Printf("[%q\n", name)
 
-	options := optionGroup.Options()
+	options := optionGroup.All()
 	count := len(options)
 	for i := 0; i < count; i++ {
 		printOption(options[i], i == count-1)

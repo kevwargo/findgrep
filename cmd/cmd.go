@@ -36,7 +36,7 @@ func Execute() error {
 			}
 
 			findCmd := buildCommand(cfg, patterns)
-			if printCmd || cfg.Misc.Verbose.Active() {
+			if printCmd || cfg.Misc.IsSet(config.MiscVerbose) {
 				printCommand(findCmd.Args...)
 			}
 			if printCmd {
@@ -63,21 +63,11 @@ func printConfigJSON(cfg *config.Config) error {
 }
 
 func registerConfigFlags(cfg *config.Config, flagSet *pflag.FlagSet) {
-	for _, opt := range cfg.ExcludePaths {
-		opt.RegisterFlag(flagSet, "exclude-")
-	}
-	for _, opt := range cfg.IgnoreFiles {
-		opt.RegisterFlag(flagSet, "ignore-")
-	}
-	for _, opt := range cfg.SelectFiles {
-		opt.RegisterFlag(flagSet, "only-")
-	}
-	for _, opt := range cfg.Grep {
-		opt.RegisterFlag(flagSet, "")
-	}
-
-	cfg.Misc.Gzip.RegisterFlag(flagSet, "")
-	cfg.Misc.Verbose.RegisterFlag(flagSet, "")
+	cfg.ExcludePaths.RegisterFlag(flagSet, "exclude-")
+	cfg.IgnoreFiles.RegisterFlag(flagSet, "ignore-")
+	cfg.SelectFiles.RegisterFlag(flagSet, "only-")
+	cfg.Grep.RegisterFlag(flagSet, "")
+	cfg.Misc.RegisterFlag(flagSet, "")
 }
 
 func runCommand(c *exec.Cmd) error {
