@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/json"
+
 	"github.com/spf13/pflag"
 )
 
@@ -60,6 +62,10 @@ func (o *OptionGroup) IsSet(name string) bool {
 	}
 
 	return false
+}
+
+func (o *OptionGroup) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.optmap)
 }
 
 func (o *Option) IsSet() bool {
