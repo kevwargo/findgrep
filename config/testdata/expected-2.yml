@@ -55,10 +55,6 @@ select-files:
   go:
     alias: g
     pattern: "*.go"
-  python:
-    alias: p
-    pattern: "*.py"
-    disabled: true
   typescript:
     alias: t
     pattern: "*.ts"
@@ -110,10 +106,6 @@ grep:
   after:
     target: -A
     type: int
-  lines:
-    target: -n
-    default: true
-    disabled: true
   first:
     default: true
     pattern: one

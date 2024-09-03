@@ -62,7 +62,22 @@ func load(path string, openFn func(string) (namedFile, error)) (*Config, error) 
 		}
 	}
 
-	return cfg, nil
+	return cfg.stripDisabled(), nil
+}
+
+func (c *Config) stripDisabled() *Config {
+	for _, group := range c.OptionGroups() {
+		group.ordered = slices.DeleteFunc(group.ordered, func(opt *Option) bool {
+			if opt.Disabled == nil || !*opt.Disabled {
+				return false
+			}
+
+			delete(group.optmap, opt.Name)
+			return true
+		})
+	}
+
+	return c
 }
 
 func (o *OptionGroup) UnmarshalYAML(n *yaml.Node) error {

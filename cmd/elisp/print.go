@@ -7,7 +7,7 @@ import (
 )
 
 func Print(cfg *config.Config) error {
-	if err := resolveKeys(cfg.SelectFiles, cfg.Grep, cfg.ExcludePaths, cfg.IgnoreFiles, cfg.Misc); err != nil {
+	if err := resolveKeys(cfg); err != nil {
 		return err
 	}
 
@@ -15,18 +15,44 @@ func Print(cfg *config.Config) error {
 		opt.MutexGroup = "select"
 	}
 
+	groups := collectGroups(cfg)
+	groupsCount := len(groups)
+
 	fmt.Print("(")
-	printGroup("Exclude paths", cfg.ExcludePaths, true, false)
-	printGroup("Ignore files", cfg.IgnoreFiles, false, false)
-	printGroup("Select files", cfg.SelectFiles, false, false)
-	printGroup("Grep options", cfg.Grep, false, false)
-	printGroup("Misc options", cfg.Misc, false, true)
+	for idx, g := range groups {
+		printGroup(g.title, g.group, idx == 0, idx == groupsCount-1)
+	}
 	fmt.Println(")")
 
 	return nil
 }
 
-func printGroup(name string, optionGroup config.OptionGroup, first, last bool) {
+type optionGroup struct {
+	title string
+	group *config.OptionGroup
+}
+
+func collectGroups(cfg *config.Config) (groups []optionGroup) {
+	if len(cfg.ExcludePaths.All()) > 0 {
+		groups = append(groups, optionGroup{title: "Exclude paths", group: cfg.ExcludePaths})
+	}
+	if len(cfg.IgnoreFiles.All()) > 0 {
+		groups = append(groups, optionGroup{title: "Ignore files", group: cfg.IgnoreFiles})
+	}
+	if len(cfg.SelectFiles.All()) > 0 {
+		groups = append(groups, optionGroup{title: "Select files", group: cfg.SelectFiles})
+	}
+	if len(cfg.Grep.All()) > 0 {
+		groups = append(groups, optionGroup{title: "Grep options", group: cfg.Grep})
+	}
+	if len(cfg.Misc.All()) > 0 {
+		groups = append(groups, optionGroup{title: "Misc options", group: cfg.Misc})
+	}
+
+	return
+}
+
+func printGroup(name string, optionGroup *config.OptionGroup, first, last bool) {
 	if !first {
 		fmt.Print(" ")
 	}

@@ -16,28 +16,16 @@ const (
 )
 
 type Config struct {
-	ExcludePaths OptionGroup `yaml:"exclude-paths"`
-	IgnoreFiles  OptionGroup `yaml:"ignore-files"`
-	SelectFiles  OptionGroup `yaml:"select-files"`
-	Grep         OptionGroup `yaml:"grep"`
-	Misc         OptionGroup `yaml:"misc"`
+	ExcludePaths *OptionGroup `yaml:"exclude-paths"`
+	IgnoreFiles  *OptionGroup `yaml:"ignore-files"`
+	SelectFiles  *OptionGroup `yaml:"select-files"`
+	Grep         *OptionGroup `yaml:"grep"`
+	Misc         *OptionGroup `yaml:"misc"`
 }
 
 type OptionGroup struct {
 	optmap  map[string]*Option
 	ordered []*Option
-}
-
-func (o OptionGroup) All() []*Option {
-	return o.ordered
-}
-
-func (o OptionGroup) IsSet(name string) bool {
-	if opt := o.optmap[name]; opt != nil {
-		return opt.IsSet()
-	}
-
-	return false
 }
 
 type Option struct {
@@ -56,6 +44,22 @@ type Option struct {
 	Target        stringOrSlice `yaml:"target"`
 
 	flag *pflag.Flag
+}
+
+func (c *Config) OptionGroups() []*OptionGroup {
+	return []*OptionGroup{c.ExcludePaths, c.IgnoreFiles, c.SelectFiles, c.Grep, c.Misc}
+}
+
+func (o *OptionGroup) All() []*Option {
+	return o.ordered
+}
+
+func (o *OptionGroup) IsSet(name string) bool {
+	if opt := o.optmap[name]; opt != nil {
+		return opt.IsSet()
+	}
+
+	return false
 }
 
 func (o *Option) IsSet() bool {

@@ -55,10 +55,6 @@ select-files:
   go:
     alias: g
     pattern: "*.go"
-  python:
-    alias: p
-    pattern: "*.py"
-    disabled: true
   typescript:
     alias: t
     pattern: "*.ts"

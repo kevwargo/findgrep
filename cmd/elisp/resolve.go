@@ -8,8 +8,8 @@ import (
 	"github.com/kevwargo/findgrep/config"
 )
 
-func resolveKeys(optionGroups ...config.OptionGroup) error {
-	s, err := initState(optionGroups)
+func resolveKeys(cfg *config.Config) error {
+	s, err := initState(cfg)
 	if err != nil {
 		return err
 	}
@@ -25,11 +25,11 @@ type state struct {
 	allowed         map[string]bool
 }
 
-func initState(optionGroups []config.OptionGroup) (*state, error) {
+func initState(cfg *config.Config) (*state, error) {
 	used := make(map[string]*config.Option)
 	var unresolved []*config.Option
 
-	for _, group := range optionGroups {
+	for _, group := range cfg.OptionGroups() {
 		for _, opt := range group.All() {
 			if k := opt.Key; k != "" {
 				if other := used[k]; other != nil {
