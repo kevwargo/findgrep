@@ -96,6 +96,7 @@ grep:
     target: -P
     mutex-group: pattern
   whole-word:
+    alias: w
     target: -w
   ignore-case:
     alias: i
