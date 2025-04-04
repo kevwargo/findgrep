@@ -1,0 +1,29 @@
+grep:
+  lines:
+    target: -n
+    default: true
+    disabled: false
+  first:
+    default: true
+    pattern: one
+  show-name:
+    target: -H
+    default: false
+
+select-files:
+  go:
+    pattern: "*.go"
+  python:
+    pattern: "*.py"
+
+exclude-paths:
+  venv:
+    pattern: venv
+    default: true
+
+exclude-files:
+  mocks:
+    pattern: "*_mock.go"
+    default: true
+  tests:
+    pattern: "*_test.go"

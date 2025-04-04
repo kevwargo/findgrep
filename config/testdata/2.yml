@@ -1,0 +1,6 @@
+grep:
+  show-name:
+    target: -H
+    default: true
+  lines:
+    disabled: true
