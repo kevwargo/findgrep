@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,13 +37,15 @@ func Execute() error {
 			}
 
 			findCmd := buildCommand(cfg, patterns)
-			if printCmd || cfg.Misc.IsSet(config.MiscVerbose) {
-				printCommand(findCmd.Args...)
-			}
+
 			if printCmd {
+				printCommand(os.Stdout, findCmd.Args...)
 				return nil
 			}
 
+			if cfg.Misc.IsSet(config.MiscVerbose) {
+				printCommand(os.Stderr, findCmd.Args...)
+			}
 			return runCommand(findCmd)
 		},
 	}
@@ -89,12 +92,12 @@ func runCommand(c *exec.Cmd) error {
 	return fmt.Errorf("%w: %s", err, strings.Trim(stderr.String(), "\n"))
 }
 
-func printCommand(args ...string) {
+func printCommand(w io.Writer, args ...string) {
 	for i, arg := range args {
 		if strings.ContainsAny(arg, ` "'`) {
 			args[i] = fmt.Sprintf("%q", arg)
 		}
 	}
 
-	fmt.Println(strings.Join(args, " "))
+	fmt.Fprintln(w, strings.Join(args, " "))
 }
