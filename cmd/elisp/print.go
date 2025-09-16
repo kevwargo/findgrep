@@ -33,19 +33,19 @@ type optionGroup struct {
 }
 
 func collectGroups(cfg *config.Config) (groups []optionGroup) {
-	if len(cfg.ExcludePaths.All()) > 0 {
+	if !cfg.ExcludePaths.Empty() {
 		groups = append(groups, optionGroup{title: "Exclude paths", group: cfg.ExcludePaths})
 	}
-	if len(cfg.IgnoreFiles.All()) > 0 {
+	if !cfg.IgnoreFiles.Empty() {
 		groups = append(groups, optionGroup{title: "Ignore files", group: cfg.IgnoreFiles})
 	}
-	if len(cfg.SelectFiles.All()) > 0 {
+	if !cfg.SelectFiles.Empty() {
 		groups = append(groups, optionGroup{title: "Select files", group: cfg.SelectFiles})
 	}
-	if len(cfg.Grep.All()) > 0 {
+	if !cfg.Grep.Empty() {
 		groups = append(groups, optionGroup{title: "Grep options", group: cfg.Grep})
 	}
-	if len(cfg.Misc.All()) > 0 {
+	if !cfg.Misc.Empty() {
 		groups = append(groups, optionGroup{title: "Misc options", group: cfg.Misc})
 	}
 
@@ -60,7 +60,7 @@ func printGroup(name string, optionGroup *config.OptionGroup, first, last bool) 
 
 	options := optionGroup.All()
 	count := len(options)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		printOption(options[i], i == count-1)
 	}
 

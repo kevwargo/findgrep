@@ -34,10 +34,7 @@ func buildExcludePaths(cfg *config.Config) (args []string) {
 	args = append(args, "(")
 
 	pos := 0
-	for _, opt := range cfg.ExcludePaths.All() {
-		if !opt.IsSet() {
-			continue
-		}
+	for opt := range cfg.ExcludePaths.AllSet() {
 		for _, pattern := range opt.Pattern {
 			if pos > 0 {
 				args = append(args, "-o")
@@ -60,10 +57,7 @@ func buildExcludePaths(cfg *config.Config) (args []string) {
 }
 
 func buildIgnoreFiles(cfg *config.Config) (args []string) {
-	for _, opt := range cfg.IgnoreFiles.All() {
-		if !opt.IsSet() {
-			continue
-		}
+	for opt := range cfg.IgnoreFiles.AllSet() {
 		for _, pattern := range opt.Pattern {
 			args = append(args, "!", "-name", pattern)
 		}
@@ -80,11 +74,7 @@ func buildSelectFiles(cfg *config.Config) (args []string) {
 		convertPattern = func(p string) string { return p + ".gz" }
 	}
 
-	for _, opt := range cfg.SelectFiles.All() {
-		if !opt.IsSet() {
-			continue
-		}
-
+	for opt := range cfg.SelectFiles.AllSet() {
 		switch len(opt.Pattern) {
 		case 0:
 		case 1:
@@ -109,11 +99,7 @@ func buildSelectFiles(cfg *config.Config) (args []string) {
 }
 
 func buildGrep(cfg *config.Config, patterns []string) (args []string) {
-	for _, opt := range cfg.Grep.All() {
-		if !opt.IsSet() {
-			continue
-		}
-
+	for opt := range cfg.Grep.AllSet() {
 		value := opt.Value
 		if value == nil {
 			value = opt.Default

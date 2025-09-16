@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"iter"
 
 	"github.com/spf13/pflag"
 )
@@ -54,6 +55,22 @@ func (c *Config) OptionGroups() []*OptionGroup {
 
 func (o *OptionGroup) All() []*Option {
 	return o.ordered
+}
+
+func (o *OptionGroup) AllSet() iter.Seq[*Option] {
+	return func(yield func(opt *Option) bool) {
+		for _, opt := range o.ordered {
+			if opt.IsSet() {
+				if !yield(opt) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func (o *OptionGroup) Empty() bool {
+	return len(o.ordered) == 0
 }
 
 func (o *OptionGroup) IsSet(name string) bool {
