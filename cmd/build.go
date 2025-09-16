@@ -31,18 +31,30 @@ func buildCommand(cfg *config.Config, patterns []string) *exec.Cmd {
 }
 
 func buildExcludePaths(cfg *config.Config) (args []string) {
+	args = append(args, "(")
+
+	pos := 0
 	for _, opt := range cfg.ExcludePaths.All() {
 		if !opt.IsSet() {
 			continue
 		}
 		for _, pattern := range opt.Pattern {
-			if !(strings.ContainsAny(pattern, "*/")) {
-				pattern = fmt.Sprintf("*/%s/*", pattern)
+			if pos > 0 {
+				args = append(args, "-o")
 			}
 
-			args = append(args, "!", "-path", pattern)
+			if strings.ContainsAny(pattern, "/*") {
+				args = append(args, "-path", pattern)
+			} else {
+				args = append(args, "-name", pattern)
+			}
+
+			pos++
 		}
 	}
+
+	args = append(args, ")")
+	args = append(args, "-prune", "-o")
 
 	return
 }
