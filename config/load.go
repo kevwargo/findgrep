@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func Load(dir string) (*Config, error) {
@@ -189,4 +189,13 @@ func (s *stringOrSlice) UnmarshalYAML(n *yaml.Node) error {
 	*s = []string{str}
 
 	return nil
+}
+
+func (s stringOrSlice) MarshalYAML() (any, error) {
+	if len(s) == 1 {
+		first := (s)[0]
+		return first, nil
+	}
+
+	return []string(s), nil
 }
