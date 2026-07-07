@@ -80,13 +80,10 @@ func buildSelectFiles(cfg *config.Config) (args []string) {
 		case 1:
 			args = append(args, "-name", convertPattern(opt.Pattern[0]))
 		default:
-			args = append(args, "(")
-			for idx, pattern := range opt.Pattern {
-				if idx > 0 {
-					args = append(args, "-o")
-				}
-				args = append(args, "-name", convertPattern(pattern))
+			for _, pattern := range opt.Pattern {
+				args = append(args, "-o", "-name", convertPattern(pattern))
 			}
+			args[0] = "(" // replace first "-o" which would be a syntax error
 			args = append(args, ")")
 		}
 	}
@@ -110,8 +107,8 @@ func buildGrep(cfg *config.Config, patterns []string) (args []string) {
 			continue
 		}
 
+		v := fmt.Sprint(value)
 		for _, target := range opt.Target {
-			v := fmt.Sprint(value)
 			if strings.HasSuffix(target, "=") {
 				args = append(args, target+v)
 			} else {
